@@ -11,14 +11,15 @@ void ipv4()
 {
   unsigned char charBuffer;
   int byteInt;
-  unsigned char charArray[4];
+  unsigned char charArray[20];
   string byteString;
   fstream file("./paquetesRedes/ethernet_ipv4_icmp.bin", ios::in);
   file.seekg(14, ios::beg);
+  file.read((char *)&charArray, sizeof(charArray));
 
   // -------- ------- ------ ----- Version and Header Size----- ------ ------- --------
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+
+  byteInt = static_cast<int>(charArray[0]);
   byteString = bitset<8>(byteInt).to_string();
 
   string version = byteString.substr(0, 4);
@@ -28,8 +29,7 @@ void ipv4()
   cout << "Tamano de cabecera: " << stoi(headerSize, 0, 2) << " Palabras" << '\n';
 
   // -------- ------- ------ ----- Service ----- ------ ------- --------
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+  byteInt = static_cast<int>(charArray[1]);
   byteString = bitset<8>(byteInt).to_string();
 
   string priority = byteString.substr(0, 3);
@@ -56,26 +56,21 @@ void ipv4()
   cout << "\nFiabilidad: " << ((byteString[5] == '0') ? "normal" : "alta") << '\n';
 
   // -------- ------- ------ ----- Total Length ----- ------ ------- --------
-  file.read((char *)&charArray[0], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[0]);
+  byteInt = static_cast<int>(charArray[2]);
   byteString = bitset<8>(byteInt).to_string();
-  file.read((char *)&charArray[1], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[1]);
+  byteInt = static_cast<int>(charArray[3]);
   byteString += bitset<8>(byteInt).to_string();
   cout << "Longitud total: " << stoi(byteString, 0, 2) << endl;
 
   // -------- ------- ------ ----- Identifier ----- ------ ------- --------
-  file.read((char *)&charArray[0], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[0]);
+  byteInt = static_cast<int>(charArray[4]);
   byteString = bitset<8>(byteInt).to_string();
-  file.read((char *)&charArray[1], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[1]);
+  byteInt = static_cast<int>(charArray[5]);
   byteString += bitset<8>(byteInt).to_string();
   cout << "Identificador: " << stoi(byteString, 0, 2) << endl;
 
   // -------- ------- ------ ----- Indicator ----- ------ ------- --------
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+  byteInt = static_cast<int>(charArray[6]);
   byteString = bitset<8>(byteInt).to_string();
 
   cout << "Flags: \n";
@@ -85,20 +80,17 @@ void ipv4()
 
   // -------- ------- ------ ----- Fragment Position ----- ------ ------- --------
   byteString = byteString.substr(3, 5);
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+  byteInt = static_cast<int>(charArray[7]);
   byteString += bitset<8>(byteInt).to_string();
   cout << "Posicion de Fragmento: " << stoi(byteString, 0, 2) << endl;
 
   // -------- ------- ------ ----- Life Time (TTL) ----- ------ ------- --------
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+  byteInt = static_cast<int>(charArray[8]);
   byteString += bitset<8>(byteInt).to_string();
   cout << "Tiempo de vida: " << stoi(byteString, 0, 2) << '\n';
 
   // -------- ------- ------ ----- Protocol ----- ------ ------- --------
-  file.read((char *)&charBuffer, sizeof(charBuffer));
-  byteInt = static_cast<int>(charBuffer);
+  byteInt = static_cast<int>(charArray[9]);
   byteString = bitset<8>(byteInt).to_string();
   int protocol = stoi(byteString, 0, 2);
   cout << "Protocolo: ";
@@ -118,11 +110,9 @@ void ipv4()
     cout << "Protocolo no identificado";
 
   // -------- ------- ------ ----- Checksum ----- ------ ------- --------
-  file.read((char *)&charArray[0], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[0]);
+  byteInt = static_cast<int>(charArray[10]);
   byteString = bitset<8>(byteInt).to_string();
-  file.read((char *)&charArray[1], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[1]);
+  byteInt = static_cast<int>(charArray[11]);
   byteString += bitset<8>(byteInt).to_string();
 
   stringstream ss;
@@ -133,49 +123,27 @@ void ipv4()
 
   // -------- ------- ------ ----- IP Address Origin ----- ------ ------- --------
   string ipAddressOrigin;
-  file.read((char *)&charArray[0], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[0]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressOrigin = to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[1], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[1]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressOrigin += "." + to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[2], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[2]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressOrigin += "." + to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[3], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[3]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressOrigin += "." + to_string(stoi(byteString, 0, 2));
+  for (int i = 12; i <= 15; i++)
+  {
+    if (i > 12)
+      ipAddressOrigin += ".";
+    byteInt = static_cast<int>(charArray[i]);
+    byteString = bitset<8>(byteInt).to_string();
+    ipAddressOrigin += to_string(stoi(byteString, 0, 2));
+  }
 
   cout << "Direccion IP de origen: " << ipAddressOrigin << '\n';
 
   // -------- ------- ------ ----- IP Address Origin ----- ------ ------- --------
   string ipAddressDestination;
-  file.read((char *)&charArray[0], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[0]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressDestination = to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[1], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[1]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressDestination += "." + to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[2], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[2]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressDestination += "." + to_string(stoi(byteString, 0, 2));
-
-  file.read((char *)&charArray[3], sizeof(charBuffer));
-  byteInt = static_cast<int>(charArray[3]);
-  byteString = bitset<8>(byteInt).to_string();
-  ipAddressDestination += "." + to_string(stoi(byteString, 0, 2));
+  for (int i = 16; i <= 19; i++)
+  {
+    if (i > 16)
+      ipAddressDestination += ".";
+    byteInt = static_cast<int>(charArray[i]);
+    byteString = bitset<8>(byteInt).to_string();
+    ipAddressDestination += to_string(stoi(byteString, 0, 2));
+  }
 
   cout << "Direccion IP de Destino: " << ipAddressDestination << '\n';
 }
